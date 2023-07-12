@@ -6,7 +6,7 @@ type Orchestrator struct {
 	// User Enumeration
 	PreActionUserEnum   func(options *interface{}) bool
 	CheckBeforeEnumFunc func(options *interface{}, username string) bool
-	UserEnumFunc        func(options *interface{}, username string) bool
+	UserEnumFunc        func(options *interface{}, username string, threadindex int) (bool, int)
 	PostActionUserEnum  func(options *interface{}) bool
 
 	// Password bruteforce / spraying

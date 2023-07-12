@@ -23,7 +23,7 @@ func InitAndAverageResponseTime(optionsInterface *interface{}) bool {
 	return true
 }
 
-func UserEnum(optionsInterface *interface{}, username string) bool {
+func UserEnum(optionsInterface *interface{}, username string, threadindex int) (bool, int) {
 	pass := utils.RandomString(5)
 	options := (*optionsInterface).(*Options)
 
@@ -33,9 +33,9 @@ func UserEnum(optionsInterface *interface{}, username string) bool {
 
 	if float64(elapsedTime) < float64(options.avgResponse)*0.77 {
 		options.Log.Success(username + " - " + elapsedTime.String())
-		return true
+		return true, 0
 	} else {
 		options.Log.Fail(username + " - " + fmt.Sprint(elapsedTime))
-		return false
+		return false, 0
 	}
 }

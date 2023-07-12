@@ -42,7 +42,7 @@ func PrepareSMTPConnections(optionsInterface *interface{}) bool {
 	return true
 }
 
-func UserEnum(optionsInterface *interface{}, username string) bool {
+func UserEnum(optionsInterface *interface{}, username string, threadindex int) (bool, int) {
 	options := (*optionsInterface).(*Options)
 	valid := false
 	smtpConnection := <-options.connectionsPool
@@ -67,7 +67,7 @@ func UserEnum(optionsInterface *interface{}, username string) bool {
 			if strings.Contains(err.Error(), "connection reset by peer") {
 				smtpConnection.Close()
 				options.createNewConnection()
-				return UserEnum(optionsInterface, username)
+				return UserEnum(optionsInterface, username, threadindex)
 			}
 			options.Log.Fail(username)
 		}
@@ -81,7 +81,7 @@ func UserEnum(optionsInterface *interface{}, username string) bool {
 			if strings.Contains(err.Error(), "connection reset by peer") {
 				smtpConnection.Close()
 				options.createNewConnection()
-				return UserEnum(optionsInterface, username)
+				return UserEnum(optionsInterface, username, threadindex)
 			}
 			options.Log.Fail(username)
 		}
@@ -96,7 +96,7 @@ func UserEnum(optionsInterface *interface{}, username string) bool {
 			if strings.Contains(err.Error(), "connection reset by peer") {
 				smtpConnection.Close()
 				options.createNewConnection()
-				return UserEnum(optionsInterface, username)
+				return UserEnum(optionsInterface, username, threadindex)
 			}
 			options.Log.Fail(username)
 			// If the command is not implemented no need to pursue
@@ -119,31 +119,31 @@ func UserEnum(optionsInterface *interface{}, username string) bool {
 		options.Log.Debug("Enumerate with RCPT")
 		optionsCopy.Mode = "rcpt"
 		newOptionsInterface := reflect.ValueOf(&optionsCopy).Interface()
-		valid = UserEnum(&newOptionsInterface, username)
+		valid, _ = UserEnum(&newOptionsInterface, username, threadindex)
 		if valid {
-			return true
+			return true, 0
 		}
 		// VRFY
 		options.Log.Debug("Enumerate with VRFY")
 		optionsCopy.Mode = "vrfy"
 		newOptionsInterface = reflect.ValueOf(&optionsCopy).Interface()
-		valid = UserEnum(&newOptionsInterface, username)
+		valid, _ = UserEnum(&newOptionsInterface, username, threadindex)
 		if valid {
-			return true
+			return true, 0
 		}
 		// EXPN
 		if !options.expnNotRecognized {
 			options.Log.Debug("Enumerate with EXPN")
 			optionsCopy.Mode = "expn"
 			newOptionsInterface = reflect.ValueOf(&optionsCopy).Interface()
-			valid = UserEnum(&newOptionsInterface, username)
+			valid, _ = UserEnum(&newOptionsInterface, username, threadindex)
 		}
-		return valid
+		return valid, 0
 	default:
 		options.Log.Fatal("Unrecognised mode: " + options.Mode + ". Only RCPT, VRFY and EXPN are supported.")
 	}
 	options.connectionsPool <- smtpConnection
-	return valid
+	return valid, 0
 }
 
 func CloseSMTPConnections(optionsInterface *interface{}) bool {

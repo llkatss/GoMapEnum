@@ -19,7 +19,7 @@ var URL_TEAMS = "https://teams.microsoft.com/api/mt/emea/beta/users/%s/externals
 // CLIENT_VERSION is the header which is sent for API requests
 var CLIENT_VERSION = "27/1.0.0.2021011237"
 
-func UserEnum(optionsInterface *interface{}, username string) bool {
+func UserEnum(optionsInterface *interface{}, username string, threadindex int) (bool, int) {
 
 	options := (*optionsInterface).(*Options)
 	var valid = false
@@ -75,5 +75,5 @@ func UserEnum(optionsInterface *interface{}, username string) bool {
 		options.Log.Fail(username)
 		options.Log.Error("Something went wrong. The status code returned by the server is " + strconv.Itoa(resp.StatusCode))
 	}
-	return valid
+	return valid, 0
 }

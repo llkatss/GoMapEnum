@@ -21,10 +21,19 @@ type BaseOptions struct {
 	StopOnLockout bool
 	Sleep         int
 	Target        string
+	ThrotLimit    int
+	ThrotAction   string
+	ThrotAdd      bool
+	ErrorAdd      bool
+	ErrorLimit    int
+	ErrorAction   string
+	LogFile       string
 	CheckIfValid  bool
 	ProxyHTTP     func(*http.Request) (*url.URL, error)
+	ProxyFile     string
 	ProxyTCP      proxy.Dialer
 	Mutex         sync.Mutex
+	ReqMultiplier int
 }
 
 // ErrLockout is the error to returned when an account is locked

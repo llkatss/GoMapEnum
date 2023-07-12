@@ -23,9 +23,19 @@ var enumCmd = &cobra.Command{
 		log := logger.New("Enumeration", "O365", "https://login.microsoftonline.com")
 		log.SetLevel(level)
 		log.Info("Starting the module O365")
+		if o365Options.LogFile != "" {
+			//logFile, err := os.OpenFile("log.txt", os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
+			//if err == nil {
+			//	mw := io.MultiWriter(os.Stdout, logFile)
+
+			//	log.SetOutput(mw)
+			//}
+			log.File = o365Options.LogFile
+		}
 		o365Options.Log = log
 
 		orchestratorOptions := orchestrator.Orchestrator{}
+		orchestratorOptions.PreActionUserEnum = o365.InitData
 		orchestratorOptions.UserEnumFunc = o365.UserEnum
 		validUsers = orchestratorOptions.UserEnum(&o365Options)
 	},
@@ -42,7 +52,16 @@ func init() {
 
 	enumCmd.Flags().StringVarP(&o365Options.Users, "user", "u", "", "User or file containing the emails")
 	enumCmd.Flags().IntVar(&o365Options.Thread, "thread", 2, "Number of threads")
+	enumCmd.Flags().IntVar(&o365Options.ReqMultiplier, "reqmultiplier", 200, "Request multiplier")
 	enumCmd.Flags().StringVarP(&o365Options.Mode, "mode", "m", "office", "Choose a mode between office and oauth2 (office mode does not try to authenticate) ")
+	enumCmd.Flags().IntVar(&o365Options.ThrotLimit, "throtlim", 0, "Limit of throttling in requests")
+	enumCmd.Flags().BoolVar(&o365Options.ThrotAdd, "throtadd", false, "Add throttled users to the queue")
+	enumCmd.Flags().BoolVar(&o365Options.ErrorAdd, "erradd", false, "Add error users to the queue")
+	enumCmd.Flags().IntVar(&o365Options.ErrorLimit, "errorlim", 0, "Limit of errors in requests")
+	enumCmd.Flags().StringVarP(&o365Options.LogFile, "logfile", "", "", "LogFile to write (additionally with console)")
+	enumCmd.Flags().StringVarP(&o365Options.ProxyFile, "proxyfile", "", "", "File with proxies")
+	enumCmd.Flags().StringVarP(&o365Options.ThrotAction, "throtaction", "", "", "do this after the limit of throttling more than throtlim. Ex for sleep 30 sec: sleep:30")
+	enumCmd.Flags().StringVarP(&o365Options.ErrorAction, "erroraction", "", "", "do this after the limit of errors more than errorlim. Ex: nextproxy")
 
 	err := enumCmd.MarkFlagRequired("user")
 	if err != nil {

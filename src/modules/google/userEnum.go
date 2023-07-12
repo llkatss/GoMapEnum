@@ -9,7 +9,7 @@ import (
 
 var URL_GOOGLE_USER_ENUM = "https://mail.google.com/mail/gxlu?email=%s"
 
-func UserEnum(optionsInterface *interface{}, username string) bool {
+func UserEnum(optionsInterface *interface{}, username string, threadindex int) (bool, int) {
 
 	options := (*optionsInterface).(*Options)
 	var valid = false
@@ -31,7 +31,7 @@ func UserEnum(optionsInterface *interface{}, username string) bool {
 	resp, err := client.Do(req)
 	if err != nil {
 		options.Log.Error("Error on response.\n[ERRO] - " + err.Error())
-		return false
+		return false, 0
 	}
 
 	if len(resp.Cookies()) > 0 {
@@ -41,5 +41,5 @@ func UserEnum(optionsInterface *interface{}, username string) bool {
 		options.Log.Fail(username)
 	}
 
-	return valid
+	return valid, 0
 }

@@ -4,23 +4,36 @@ import (
 	"strings"
 )
 
+func InitData(optionsInterface *interface{}) bool {
+	options := (*optionsInterface).(*Options)
+	for i := 0; i < options.Thread; i++ {
+		reqcounter = append(reqcounter, 0)
+		hpgid = append(hpgid, "")
+		hpgact = append(hpgact, "")
+		sCtx = append(sCtx, "")
+		hpgrequestid = append(hpgrequestid, "")
+		referer = append(referer, "")
+	}
+	return true
+}
+
 // UserEnum return a valid list of users according the provided options
-func UserEnum(optionsInterface *interface{}, username string) bool {
+func UserEnum(optionsInterface *interface{}, username string, threadindex int) (bool, int) {
 	if !CheckTenant(optionsInterface, username) {
-		return false
+		return false, 0
 	}
 	options := (*optionsInterface).(*Options)
 	switch options.Mode {
 	case "office":
-		return options.enumOffice(username)
+		return options.enumOffice(username, threadindex)
 	case "oauth2":
-		return options.enumOauth2(username)
+		return options.enumOauth2(username), 0
 	case "onedrive":
-		return options.enumOnedrive(username)
+		return options.enumOnedrive(username), 0
 
 	}
 	options.Log.Error("Invalid mode. It should be office, oauth2 or onedrive")
-	return false
+	return false, 0
 
 }
 

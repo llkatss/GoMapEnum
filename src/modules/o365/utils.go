@@ -13,7 +13,9 @@ import (
 	"net/url"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
+	"sync"
 )
 
 // OFFICE_URL is used to get parameter for office user enumeration
@@ -28,40 +30,89 @@ var VALIDATE_TENANT_URL = "https://login.microsoftonline.com/getuserrealm.srf?lo
 // OAUTH2_URL is the URL to authenticate with oauth2 method
 var OAUTH2_URL = "https://login.microsoft.com/common/oauth2/token"
 
+// var reqmultiplier = 200
+
+var reqMutex = sync.Mutex{}
+
+var reqcounter []int
+var hpgid []string
+var hpgact []string
+var sCtx []string
+var hpgrequestid []string
+var referer []string
+
 // enumOffice return a bool if the user exist or not
-func (options *Options) enumOffice(email string) bool {
+func (options *Options) enumOffice(email string, threadindex int) (bool, int) {
 	var exist = false
 	// Get headers
-	appId, resp := options.getDataInWebsite(OFFICE_URL, "", `, appId: '(.*?)' `)
-	// If resp is nil something went wrong
-	if resp == nil {
-		return false
-	}
-	var out []string
-	// Sometime, the response is not what expected so you retry max 3 times to get the fields
-	i := 0
-	for {
-		out, resp = options.getDataInWebsite(OFFICE_URL+"/login?es=Click&ru=/&msafed=0", "x-ms-request-id", `hpgid":([0-9]+),`, `hpgact":([0-9]+),`, `"sCtx":"(.*?)"`)
+	/*
+		appId, resp := options.getDataInWebsite(OFFICE_URL, "", `, appId: '(.*?)' `)
 		// If resp is nil something went wrong
 		if resp == nil {
 			return false
 		}
-		// If there are all the fields we can continue
-		if len(out) == 4 {
-			break
-		}
-		// Retry 3 times
-		if i == 3 {
-			options.Log.Error("Unable to retrieve all the field to authenticate")
+		// If appId is nil something went wrong
+		if appId == nil {
 			return false
 		}
-		i++
+	*/
+
+	//Instead of getting big html set appId manual
+	appId := []string{"4345a7b9-9a63-4910-a426-35363201d503", ""}
+	resp := &http.Response{}
+
+	var out []string
+	clientId := "0"
+	if reqcounter[threadindex] >= options.ReqMultiplier || reqcounter[threadindex] == 0 {
+		//Do this one per $requestmultiplier for decrease traffic to MS
+		options.Log.Debug("Thread:" + strconv.Itoa(threadindex) + " Doing /login?es=Click&ru=/&msafed=0 request")
+
+		// Sometime, the response is not what expected so you retry max 3 times to get the fields
+		i := 0
+		for {
+			out, resp = options.getDataInWebsite(OFFICE_URL+"/login?es=Click&ru=/&msafed=0", "x-ms-request-id", `hpgid":([0-9]+),`, `hpgact":([0-9]+),`, `"sCtx":"(.*?)"`)
+			// If resp is nil something went wrong
+			if resp == nil {
+				return false, 0
+			}
+			// If there are all the fields we can continue
+			if len(out) == 4 {
+				break
+			}
+			// Retry 3 times
+			if i == 3 {
+				options.Log.Error("Username: " + email + " - Unable to retrieve all the field to authenticate")
+				return false, 2
+			}
+			i++
+		}
+
+		if len(out) == 0 {
+			options.Log.Error("Username: " + email + " - Unable to retrieve all the field to authenticate")
+			return false, 2
+		}
+
+		if len(appId) > 0 {
+			clientId = appId[0]
+		} else {
+			options.Log.Error("Username: " + email + " - Unable to retrieve clientId")
+			return false, 2
+		}
+
+		reqMutex.Lock()
+		hpgid[threadindex] = out[0]
+		hpgact[threadindex] = out[1]
+		sCtx[threadindex] = out[2]
+		hpgrequestid[threadindex] = out[3]
+		referer[threadindex] = resp.Request.URL.String()
+		reqcounter[threadindex] = 1
+		reqMutex.Unlock()
+
+	} else {
+		reqMutex.Lock()
+		reqcounter[threadindex]++
+		reqMutex.Unlock()
 	}
-	clientId := appId[0]
-	hpgid := out[0]
-	hpgact := out[1]
-	sCtx := out[2]
-	hpgrequestid := out[3]
 
 	// Test the user
 	// Prepare the data
@@ -77,7 +128,7 @@ func (options *Options) enumOffice(email string) bool {
 	officeDataToSend.IsRemoteConnectSupported = false
 	officeDataToSend.IsSignup = false
 	officeDataToSend.FederationFlags = 0
-	officeDataToSend.OriginalRequest = sCtx
+	officeDataToSend.OriginalRequest = sCtx[threadindex]
 	officeDataToSend.Username = email
 
 	jsonData, _ := json.Marshal(officeDataToSend)
@@ -85,11 +136,11 @@ func (options *Options) enumOffice(email string) bool {
 
 	req.Header.Add("Origin", "https://login.microsoftonline.com")
 	req.Header.Add("Accept", "application/json")
-	req.Header.Add("hpgact", hpgact)
-	req.Header.Add("hpgid", hpgid)
+	req.Header.Add("hpgact", hpgact[threadindex])
+	req.Header.Add("hpgid", hpgid[threadindex])
 	req.Header.Add("client-request-id", clientId)
-	req.Header.Add("hpgrequestid", hpgrequestid)
-	req.Header.Add("Referer", resp.Request.URL.String())
+	req.Header.Add("hpgrequestid", hpgrequestid[threadindex])
+	req.Header.Add("Referer", referer[threadindex])
 	req.Header.Add("Canary", utils.RandomString(248))
 
 	client := &http.Client{
@@ -102,35 +153,38 @@ func (options *Options) enumOffice(email string) bool {
 	resp, err := client.Do(req)
 	if err != nil {
 		options.Log.Error("Error on response.\n[ERRO] - " + err.Error())
-	}
-	if resp.StatusCode == 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		var respStruct officeResponse
-		json.Unmarshal(body, &respStruct)
-		if respStruct.EstsProperties.DesktopSsoEnabled != nil && !*respStruct.EstsProperties.DesktopSsoEnabled {
-			options.Log.Fail(email + " Desktop SSO disabled")
-			return exist
-		}
+		return exist, 2
+	} else {
 
-		if respStruct.ThrottleStatus == 1 {
-			options.Log.Fail(email + " Requests are being throttled")
-			return exist
-		}
+		if resp.StatusCode == 200 {
+			body, _ := ioutil.ReadAll(resp.Body)
+			var respStruct officeResponse
+			json.Unmarshal(body, &respStruct)
+			if respStruct.EstsProperties.DesktopSsoEnabled != nil && !*respStruct.EstsProperties.DesktopSsoEnabled {
+				options.Log.Fail(email + " Desktop SSO disabled")
+				return exist, 0
+			}
 
-		if respStruct.IfExistsResult == 0 || respStruct.IfExistsResult == 6 {
-			options.Log.Success(email)
-			exist = true
-		} else if respStruct.IfExistsResult == 5 {
-			options.Log.Info(email + " exist but is from a different identity provider (maybe a personal account)")
-			exist = true
+			if respStruct.ThrottleStatus == 1 {
+				options.Log.Debug("[+/-] " + email + " - Requests are being throttled")
+				return exist, 1
+			}
+
+			if respStruct.IfExistsResult == 0 || respStruct.IfExistsResult == 6 {
+				options.Log.Success(email)
+				exist = true
+			} else if respStruct.IfExistsResult == 5 {
+				options.Log.Info(email + " exist but is from a different identity provider (maybe a personal account)")
+				exist = true
+			} else {
+				options.Log.Fail(email)
+			}
+
 		} else {
 			options.Log.Fail(email)
 		}
-
-	} else {
-		options.Log.Fail(email)
 	}
-	return exist
+	return exist, 0
 }
 
 func (options *Options) enumOauth2(username string) bool {

@@ -38,6 +38,7 @@ By default, if one account is being lock, the all attack will be stopped.
 
 		orchestratorOptions := orchestrator.Orchestrator{}
 		orchestratorOptions.CustomOptionsForCheckIfValid = o365.PrepareOptions
+		orchestratorOptions.PreActionUserEnum = o365.InitData
 		orchestratorOptions.AuthenticationFunc = o365.Authenticate
 		orchestratorOptions.UserEnumFunc = o365.UserEnum
 		validUsers = orchestratorOptions.Bruteforce(&o365Options)
@@ -46,7 +47,7 @@ By default, if one account is being lock, the all attack will be stopped.
 
 func init() {
 
-	bruteCmd.Flags().BoolVarP(&o365Options.CheckIfValid, "check", "c", true, "Check if the user is valid before trying password")
+	bruteCmd.Flags().BoolVarP(&o365Options.CheckIfValid, "check", "c", false, "Check if the user is valid before trying password")
 	bruteCmd.Flags().BoolVarP(&o365Options.NoBruteforce, "no-bruteforce", "n", false, "No spray when using file for username and password (user1 => password1, user2 => password2)")
 	//bruteCmd.Flags().StringVarP(&o365Options.Mode, "mode", "m", "oauth2", "oauth2")
 	bruteCmd.Flags().StringVarP(&o365Options.Users, "user", "u", "", "User or file containing the emails")

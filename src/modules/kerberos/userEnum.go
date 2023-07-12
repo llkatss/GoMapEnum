@@ -1,6 +1,6 @@
 package kerberos
 
-func UserEnum(optionsInterface *interface{}, username string) bool {
+func UserEnum(optionsInterface *interface{}, username string, threadindex int) (bool, int) {
 	options := (*optionsInterface).(*Options)
 	valid, err := options.testUsername(username)
 	if valid {
@@ -19,5 +19,5 @@ func UserEnum(optionsInterface *interface{}, username string) bool {
 		options.Log.Debug("Unknown behavior for username %s", username)
 	}
 
-	return valid
+	return valid, 0
 }

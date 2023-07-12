@@ -50,12 +50,12 @@ var BASE_XML = `<?xml version="1.0" encoding="UTF-8"?>
 // AZURE_URL is the url to authenticate on
 var AZURE_URL = "https://autologon.microsoftazuread-sso.com/%s/winauth/trust/2005/usernamemixed?client-request-id=%s"
 
-func UserEnum(optionsInterface *interface{}, username string) bool {
+func UserEnum(optionsInterface *interface{}, username string, threadindex int) (bool, int) {
 	options := (*optionsInterface).(*Options)
 	valid := false
 	if len(strings.Split(username, "@")) == 1 {
 		options.Log.Error("Only email format is supported, skipping " + username)
-		return false
+		return false, 0
 	}
 	client := &http.Client{
 
@@ -116,5 +116,5 @@ func UserEnum(optionsInterface *interface{}, username string) bool {
 		options.Log.Error("Unknow error: " + structResponseAzure.Body.Fault.Detail.Error.Internalerror.Text)
 
 	}
-	return valid
+	return valid, 0
 }
