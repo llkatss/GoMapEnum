@@ -38,7 +38,8 @@ go run main.go o365 dump  -u john.doe@contoso.com  -p s3crur3P4ssw0rd --dump use
 
 		if o365Options.CheckIfValid {
 			optionsInterface := reflect.ValueOf(&o365Options).Interface()
-			if !o365.Authenticate(&optionsInterface, o365Options.Users, o365Options.Passwords) {
+			res, _ := o365.Authenticate(&optionsInterface, o365Options.Users, o365Options.Passwords)
+			if !res {
 				log.Error("Cannot authenticate with %s / %s", o365Options.Users, o365Options.Passwords)
 				return
 			}
@@ -50,7 +51,7 @@ go run main.go o365 dump  -u john.doe@contoso.com  -p s3crur3P4ssw0rd --dump use
 
 func init() {
 
-	dumpCmd.Flags().BoolVarP(&o365Options.CheckIfValid, "check", "c", true, "Check if the user is valid before trying password")
+	dumpCmd.Flags().BoolVarP(&o365Options.CheckIfValid, "check", "c", false, "Check if the user is valid before trying password")
 	dumpCmd.Flags().StringVarP(&o365Options.Users, "user", "u", "", "User or file containing the emails")
 	dumpCmd.Flags().StringVarP(&o365Options.Passwords, "password", "p", "", "Password or file containing the passwords")
 	dumpCmd.Flags().StringVar(&o365Options.DumpObjects, "dump", "all", "Dump objects among computers,users. Could be 'all' keyword  (ex: tenantDetails,policies,servicePrincipals,groups,applications,devices,directoryRoles,roleDefinitions,contacts,oauth2PermissionGrants)")

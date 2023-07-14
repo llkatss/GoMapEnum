@@ -26,7 +26,7 @@ func RetrieveTargetInfo(optionsInterface *interface{}) bool {
 	return true
 }
 
-func Authenticate(optionsInterface *interface{}, username, password string) bool {
+func Authenticate(optionsInterface *interface{}, username, password string) (bool, int) {
 	options := (*optionsInterface).(*Options)
 	valid, err := options.authenticate(username, password)
 	if err != nil {
@@ -45,7 +45,7 @@ func Authenticate(optionsInterface *interface{}, username, password string) bool
 
 		}
 	}
-	return valid
+	return valid, 0
 }
 
 func GetTargetInfo(target string, timeout int, proxyTCP proxy.Dialer) (string, string, error) {

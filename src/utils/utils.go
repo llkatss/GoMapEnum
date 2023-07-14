@@ -241,6 +241,16 @@ func StringInSlice(sliceStr []string, str string) bool {
 	return false
 }
 
+// StringInSlice returns true if the string is present in the slice as part of string, otherwise false
+func PartStringInSlice(sliceStr []string, str string) bool {
+	for _, value := range sliceStr {
+		if strings.Contains(value, str) {
+			return true
+		}
+	}
+	return false
+}
+
 /*func DataToHTML(dataTable interface{}, title string) bytes.Buffer {
 	var columns []string
 	v := reflect.ValueOf(dataTable).Type().Elem()

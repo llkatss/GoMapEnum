@@ -11,10 +11,13 @@ import (
 
 func (logger *Logger) print(str string) {
 	var output string
+	var foutput string
 	if logger.NoColor {
 		output = logger.Mode + "\t\t" + logger.Module + "\t\t" + logger.Target + "\t\t" + str + "\n"
+		foutput = output
 	} else {
 		output = color.HiCyanString(logger.Mode+"\t\t"+logger.Module) + "\t\t" + logger.Target + "\t\t" + str + "\n"
+		foutput = logger.Mode + "\t\t" + logger.Module + "\t\t" + logger.Target + "\t\t" + str + "\n"
 	}
 	//fmt.Println(output)
 	// For Linux and Windows support of colored output
@@ -28,9 +31,9 @@ func (logger *Logger) print(str string) {
 		}
 
 		defer f.Close()
-		output = strings.ReplaceAll(output, "\t\t", ";")
+		foutput = strings.ReplaceAll(foutput, "\t\t", ";")
 		now := time.Now().Local()
-		if _, err = f.WriteString(now.Local().String() + ";" + output); err != nil {
+		if _, err = f.WriteString(now.Local().String() + ";" + foutput); err != nil {
 			logger.File = ""
 			logger.Error("Fail to write into " + logger.File + ": " + err.Error())
 			return

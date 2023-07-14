@@ -190,7 +190,10 @@ func (options *Options) enumOffice(email string, threadindex int) (bool, int) {
 func (options *Options) enumOauth2(username string) bool {
 	var valid = false
 	password := utils.RandomString(10)
-	respStruct := options.requestOauth2(username, password)
+	respStruct, err := options.requestOauth2(username, password)
+	if err != nil {
+
+	}
 	if respStruct.ErrorDescription != "" {
 		code := strings.Split(respStruct.ErrorDescription, ":")[0]
 		switch code { // https://docs.microsoft.com/en-us/azure/active-directory/develop/reference-aadsts-error-codes
@@ -238,13 +241,16 @@ func (options *Options) enumOnedrive(email string) bool {
 
 func (options *Options) bruteOauth2(username, password string) (bool, error) {
 	var valid = false
-	respStruct := options.requestOauth2(username, password)
+	respStruct, err := options.requestOauth2(username, password)
+	if err != nil {
+		return false, err
+	}
 	if respStruct.ErrorDescription != "" {
 		code := strings.Split(respStruct.ErrorDescription, ":")[0]
 
 		switch code { // https://docs.microsoft.com/en-us/azure/active-directory/develop/reference-aadsts-error-codes
 		case "AADSTS50053":
-			options.Log.Info(username + " is locked")
+			//options.Log.Info(username + " is locked")
 			return false, utils.ErrLockout
 		case "AADSTS50126":
 			options.Log.Fail(username + " exists but the password is wrong")
@@ -346,8 +352,9 @@ func (options *Options) validTenant(domain string) bool {
 	return false
 }
 
-func (options *Options) requestOauth2(username, password string) oauth2Output {
+func (options *Options) requestOauth2(username, password string) (oauth2Output, error) {
 	var data oauth2Data
+	var respStruct oauth2Output
 	data.ClientID = "1b730954-1685-4b74-9bfd-dac224a7b894"
 	data.GrantType = "password"
 	data.Resource = "https://graph.windows.net"
@@ -358,7 +365,9 @@ func (options *Options) requestOauth2(username, password string) oauth2Output {
 	form := utils.StructToMap(&data)
 
 	req, _ := http.NewRequest("POST", OAUTH2_URL, strings.NewReader(form.Encode()))
-
+	// Get random user agent
+	userAgent := utils.GetUserAgent()
+	req.Header.Add("User-Agent", userAgent)
 	client := &http.Client{
 
 		Transport: &http.Transport{
@@ -369,12 +378,13 @@ func (options *Options) requestOauth2(username, password string) oauth2Output {
 	resp, err := client.Do(req)
 	if err != nil {
 		options.Log.Error("Error on response.\n[ERRO] - " + err.Error())
+		return respStruct, err
 	}
 	body, _ := ioutil.ReadAll(resp.Body)
-	var respStruct oauth2Output
+
 	json.Unmarshal(body, &respStruct)
 
-	return respStruct
+	return respStruct, nil
 }
 
 // dumpO365ObjectPaging dump the O365 datas.

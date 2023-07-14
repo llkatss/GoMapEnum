@@ -24,12 +24,6 @@ var enumCmd = &cobra.Command{
 		log.SetLevel(level)
 		log.Info("Starting the module O365")
 		if o365Options.LogFile != "" {
-			//logFile, err := os.OpenFile("log.txt", os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
-			//if err == nil {
-			//	mw := io.MultiWriter(os.Stdout, logFile)
-
-			//	log.SetOutput(mw)
-			//}
 			log.File = o365Options.LogFile
 		}
 		o365Options.Log = log
@@ -41,6 +35,7 @@ var enumCmd = &cobra.Command{
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
 		if output != "" {
+
 			if err := os.WriteFile(output, []byte(validUsers), 0666); err != nil {
 				fmt.Println(err)
 			}

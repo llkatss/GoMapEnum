@@ -30,7 +30,7 @@ func PrepareOptions(optionsInterface *interface{}) interface{} {
 }
 
 // Authenticate will be called to test an authentication and use the specified mode and check the lockout
-func Authenticate(optionsInterface *interface{}, email, password string) bool {
+func Authenticate(optionsInterface *interface{}, email, password string) (bool, int) {
 	options := (*optionsInterface).(*Options)
 	options.Mode = "oauth2"
 	var valid bool
@@ -38,8 +38,13 @@ func Authenticate(optionsInterface *interface{}, email, password string) bool {
 	switch options.Mode {
 	case "oauth2":
 		valid, err = options.bruteOauth2(email, password)
-		if err != nil && errors.Is(utils.ErrLockout, err) && options.StopOnLockout {
-			options.Log.Fatal("The account %s is locked", email)
+		if err != nil && errors.Is(utils.ErrLockout, err) {
+			//options.Log.Info("The account %s is locked", email)
+			return valid, 1
+		}
+		if err != nil {
+			//some another error
+			return valid, 2
 		}
 
 	case "autodiscover":
@@ -49,5 +54,5 @@ func Authenticate(optionsInterface *interface{}, email, password string) bool {
 		//valid = bruteAutodiscover(email, password)
 	}
 
-	return valid
+	return valid, 0
 }

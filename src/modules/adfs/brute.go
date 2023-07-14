@@ -15,8 +15,8 @@ func CheckTarget(optionsInterface *interface{}) bool {
 	return true
 }
 
-func Authenticate(optionsInterface *interface{}, email, password string) bool {
+func Authenticate(optionsInterface *interface{}, email, password string) (bool, int) {
 	options := (*optionsInterface).(*Options)
-	return options.brute(email, password)
+	return options.brute(email, password), 0
 
 }

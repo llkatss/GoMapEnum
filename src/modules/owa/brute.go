@@ -24,7 +24,7 @@ func PrepareBruteforce(optionsInterface *interface{}) bool {
 	return true
 }
 
-func Authenticate(optionsInterface *interface{}, email, password string) bool {
+func Authenticate(optionsInterface *interface{}, email, password string) (bool, int) {
 	options := (*optionsInterface).(*Options)
-	return options.webRequestBasicAuth(options.urlToHarvest, options.internalDomain+"\\"+email, password)
+	return options.webRequestBasicAuth(options.urlToHarvest, options.internalDomain+"\\"+email, password), 0
 }

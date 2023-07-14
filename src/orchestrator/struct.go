@@ -12,7 +12,7 @@ type Orchestrator struct {
 	// Password bruteforce / spraying
 	PreActionBruteforce          func(options *interface{}) bool
 	CustomOptionsForCheckIfValid func(options *interface{}) interface{}
-	AuthenticationFunc           func(options *interface{}, username, password string) bool
+	AuthenticationFunc           func(options *interface{}, username, password string) (bool, int)
 	PostActionBruteforce         func(options *interface{}) bool
 }
 

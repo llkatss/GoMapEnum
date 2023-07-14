@@ -26,7 +26,10 @@ var dumpURLS = map[string]string{
 func (options *Options) Dump() string {
 	username := options.Users
 	password := options.Passwords
-	respStruct := options.requestOauth2(username, password)
+	respStruct, err := options.requestOauth2(username, password)
+	if err != nil {
+		return ""
+	}
 	if respStruct.AccessToken == "" {
 		errorMessage := "Something is wrong. Check the credentials. "
 		if respStruct.ErrorDescription != "" {

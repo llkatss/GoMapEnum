@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func Authenticate(optionsInterface *interface{}, username, password string) bool {
+func Authenticate(optionsInterface *interface{}, username, password string) (bool, int) {
 	options := (*optionsInterface).(*Options)
 	valid, client, err := options.authenticate(username, password)
 	defer client.Destroy()
@@ -22,7 +22,7 @@ func Authenticate(optionsInterface *interface{}, username, password string) bool
 			options.Log.Fatal("%s - %s", username, errorString)
 		}
 	}
-	return valid
+	return valid, 0
 
 }
 

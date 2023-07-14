@@ -18,6 +18,7 @@ type BaseOptions struct {
 	Thread        int
 	Log           *logger.Logger
 	NoBruteforce  bool
+	StraightBrute bool
 	StopOnLockout bool
 	Sleep         int
 	Target        string
@@ -27,6 +28,8 @@ type BaseOptions struct {
 	ErrorAdd      bool
 	ErrorLimit    int
 	ErrorAction   string
+	RoundLimit    int
+	RoundAction   string
 	LogFile       string
 	CheckIfValid  bool
 	ProxyHTTP     func(*http.Request) (*url.URL, error)
