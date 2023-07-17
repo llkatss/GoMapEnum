@@ -68,11 +68,11 @@ func init() {
 	bruteCmd.Flags().BoolVar(&o365Options.StopOnLockout, "stopOnLockout", false, "Skip account for the bruteforce if it's locked out. Until the throataction performed")
 	bruteCmd.Flags().IntVar(&o365Options.Thread, "thread", 2, "Number of threads ")
 
-	bruteCmd.Flags().IntVar(&o365Options.ThrotLimit, "throtlim", 0, "Limit of throttling in requests")
+	bruteCmd.Flags().Float32Var(&o365Options.ThrotLimit, "throtlim", 0, "Limit of throttling in requests - in percents (ex: 0.33 ) or absolute (ex: 150 )")
 	bruteCmd.Flags().StringVarP(&o365Options.ThrotAction, "throtaction", "", "", "do this after the number of throttlings more than throtlim. Ex for sleep 30 sec: sleep:30")
-	bruteCmd.Flags().BoolVar(&o365Options.ThrotAdd, "throtadd", false, "Add throttled users to the queue")
+	bruteCmd.Flags().BoolVar(&o365Options.ThrotAdd, "throtadd", false, "Add throttled users to the end of queue")
 
-	bruteCmd.Flags().IntVar(&o365Options.ErrorLimit, "errorlim", 0, "Limit of errors in requests")
+	bruteCmd.Flags().Float32Var(&o365Options.ErrorLimit, "errorlim", 0, "Limit of errors in requests - in percents - in percents (ex: 0.33 ) or absolute (ex: 150 )")
 	bruteCmd.Flags().StringVarP(&o365Options.ErrorAction, "erroraction", "", "", "do this after the number of errors more than errorlim. Ex: nextproxy")
 	bruteCmd.Flags().BoolVar(&o365Options.ErrorAdd, "erradd", false, "Add error users to the queue")
 
@@ -80,7 +80,13 @@ func init() {
 	bruteCmd.Flags().StringVarP(&o365Options.RoundAction, "roundaction", "", "", "do this after the number of rounds more than roundlim. Ex: nextproxy")
 
 	bruteCmd.Flags().StringVarP(&o365Options.LogFile, "logfile", "", "", "LogFile to write (additionally with console)")
+	bruteCmd.Flags().BoolVar(&o365Options.StateToLog, "savestate", false, "Save queue to logfile if CTRL+C")
 	bruteCmd.Flags().StringVarP(&o365Options.ProxyFile, "proxyfile", "", "", "File with proxies")
+
+	//if o365Options.ThrotLimit less 1 -suppose that it is persent so normalize it to persent value
+	//if o365Options.ThrotLimit<1 && o365Options.ThrotLimit>0 {
+	//	o365Options.ThrotLimit = o365Options.ThrotLimit*100
+	//}
 
 	bruteCmd.MarkFlagRequired("user")
 	//bruteCmd.MarkFlagRequired("password")

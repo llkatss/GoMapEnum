@@ -39,6 +39,7 @@ func (orchestrator *Orchestrator) Bruteforce(optionsModules Options) string {
 	roundsCount := 1
 	errorCount := 0
 	totalCount := 0
+	var persent float32
 	stopflag := false
 	showstat := true
 
@@ -56,7 +57,7 @@ func (orchestrator *Orchestrator) Bruteforce(optionsModules Options) string {
 		<-c
 		if options.LogFile != "" {
 			options.Log.Info(fmt.Sprintf("Catch CTRL+C.."))
-			if options.LogFile != "" {
+			if options.LogFile != "" && options.StateToLog {
 				options.Log.Info(fmt.Sprintf("Writing queue to logfile..."))
 				for _, elem := range queue {
 					options.Log.Info(fmt.Sprintf("Unchecked username_pass: %v", elem))
@@ -188,7 +189,7 @@ func (orchestrator *Orchestrator) Bruteforce(optionsModules Options) string {
 		}
 	}
 
-	//watcher fuction
+	//watcher function
 	go func() {
 		queuelength := len(queue)
 		for {
@@ -240,13 +241,23 @@ func (orchestrator *Orchestrator) Bruteforce(optionsModules Options) string {
 				mux.Unlock()
 			}
 
-			//check the throttlings and do actions if needed
-			persent := 0
-			if reqinround > 0 {
-				persent = int((throttledCount * 100) / reqinround)
+			//checking the throttlings and do actions if needed
+			//first we have to interpret throttlimit option as persent or absolute value
+			throtflag := false
+			if options.ThrotLimit > 0 && options.ThrotLimit < 1 && reqinround > 0 {
+				//interpreting throtlimit as persent
+				persent = 0
+				persent = float32((throttledCount * 100) / reqinround)
+				if persent > (options.ThrotLimit * 100) {
+					throtflag = true
+				}
+			} else {
+				//interpreting throtlimit as absolute
+				if throttledCount > int(options.ThrotLimit) {
+					throtflag = true
+				}
 			}
-			//if options.ThrotLimit > 0 && throttledCount >= options.ThrotLimit {
-			if options.ThrotLimit > 0 && reqinround > (options.Thread*3) && persent > options.ThrotLimit {
+			if options.ThrotLimit > 0 && reqinround > (options.Thread*10) && throtflag {
 
 				//Doing throttleAction
 				options.Log.Info(fmt.Sprintf("Reached throttling limit. Throttled requests: %v. Requests in current round: %v.  Doind action: %s", throttledCount, reqinround, options.ThrotAction))
@@ -287,11 +298,23 @@ func (orchestrator *Orchestrator) Bruteforce(optionsModules Options) string {
 			}
 
 			//check the errors and do actions if needed
-			persent = 0
-			if reqinround > 0 {
-				persent = int(errorCount / reqinround * 100)
+
+			//first we have to interpret throttlimit option as persent or absolute value
+			errflag := false
+			if options.ErrorLimit > 0 && options.ErrorLimit < 1 && reqinround > 0 {
+				//interpreting Errorlimit as persent
+				persent = 0
+				persent = float32((errorCount * 100) / reqinround)
+				if persent > (options.ErrorLimit * 100) {
+					errflag = true
+				}
+			} else {
+				//interpreting throtlimit as absolute
+				if errorCount > int(options.ErrorLimit) {
+					errflag = true
+				}
 			}
-			if options.ErrorLimit > 0 && reqinround > 10 && persent > options.ErrorLimit {
+			if options.ErrorLimit > 0 && reqinround > 10 && errflag {
 				//Doing throttleAction
 				options.Log.Info(fmt.Sprintf("Reached errors limit. Error in requests: %v. Requests in current round: %v.  Doind action: %s", errorCount, reqinround, options.ErrorAction))
 				if strings.Contains(options.ErrorAction, "sleep:") {

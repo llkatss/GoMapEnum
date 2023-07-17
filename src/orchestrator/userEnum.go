@@ -105,7 +105,7 @@ func (orchestrator *Orchestrator) UserEnum(optionsModules Options) string {
 			}
 
 			//check the throttlings and do actions if needed
-			if options.ThrotLimit > 0 && throttledCont >= options.ThrotLimit {
+			if options.ThrotLimit > 0 && throttledCont >= int(options.ThrotLimit) {
 				//Doing throttleAction
 				options.Log.Info(fmt.Sprintf("Reached throttling limit. Throttled requests: %v. Total requests: %v.  Doind action: %s", throttledCont, totalCount, options.ThrotAction))
 				if strings.Contains(options.ThrotAction, "sleep:") {
@@ -137,7 +137,7 @@ func (orchestrator *Orchestrator) UserEnum(optionsModules Options) string {
 			}
 
 			//check the errors and do actions if needed
-			if options.ErrorLimit > 0 && errorCount >= options.ErrorLimit {
+			if options.ErrorLimit > 0 && errorCount >= int(options.ErrorLimit) {
 				//Doing throttleAction
 				options.Log.Info(fmt.Sprintf("Reached errors limit. Error in requests: %v. Total requests: %v.  Doind action: %s", errorCount, totalCount, options.ErrorAction))
 				if strings.Contains(options.ErrorAction, "sleep:") {

@@ -22,15 +22,16 @@ type BaseOptions struct {
 	StopOnLockout bool
 	Sleep         int
 	Target        string
-	ThrotLimit    int
+	ThrotLimit    float32
 	ThrotAction   string
 	ThrotAdd      bool
 	ErrorAdd      bool
-	ErrorLimit    int
+	ErrorLimit    float32
 	ErrorAction   string
 	RoundLimit    int
 	RoundAction   string
 	LogFile       string
+	StateToLog    bool
 	CheckIfValid  bool
 	ProxyHTTP     func(*http.Request) (*url.URL, error)
 	ProxyFile     string
